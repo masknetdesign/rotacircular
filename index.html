@@ -1,287 +1,366 @@
-<!DOCTYPE html><html lang="pt-BR">
+<!DOCTYPE html>
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consulta de Quadras com Leitor</title>
+    <title>Consulta de Quadras</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
     <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            margin: 0;
-            padding: 15px;
-            background: #f0f2f5;
-            min-height: 100vh;
+        /* CSS completo */
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background: #f0f2f5; 
         }
-        .search-box {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            max-width: 600px;
-            margin: 0 auto;
+        
+        .search-box { 
+            background: white; 
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+            max-width: 600px; 
+            margin: 0 auto; 
+            position: relative; 
         }
-        input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-            margin-bottom: 15px;
-            box-sizing: border-box;
+        
+        .search-box h1 { 
+            color: #1976D3; 
+            text-align: center; 
+            margin-bottom: 1rem; 
         }
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
+        
+        .input-wrapper { 
+            position: relative; 
         }
-        button {
-            flex: 1;
-            padding: 15px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: 0.3s;
+        
+        #searchInput { 
+            width: 100%; 
+            padding: 12px 48px 12px 12px; 
+            border: 2px solid #e0e0e0; 
+            border-radius: 8px; 
+            font-size: 16px; 
+            box-sizing: border-box; 
         }
-        .search-btn {
-            background: #2196F3;
-            color: white;
+        
+        .mic-icon { 
+            position: absolute; 
+            right: 10px; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            background: none; 
+            border: none; 
+            cursor: pointer; 
+            font-size: 22px; 
+            color: #1976D3; 
         }
-        .scan-btn {
-            background: #4CAF50;
-            color: white;
+        
+        .button-group { 
+            display: flex; 
+            gap: 10px; 
+            margin-top: 15px; 
         }
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: none;
-            justify-content: center;
-            align-items: flex-start;
-            padding: 20px;
-            z-index: 1000;
-            overflow-y: auto;
+        
+        button { 
+            flex: 1; 
+            padding: 15px; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 16px; 
+            cursor: pointer; 
+            transition: 0.3s; 
         }
-        .modal {
-            background: white;
-            width: 100%;
-            max-width: 600px;
-            border-radius: 12px;
-            padding: 1.5rem;
-            position: relative;
+        
+        .search-btn { 
+            background: #2196F3; 
+            color: white; 
         }
-        .scanner-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            display: none;
-            z-index: 2000;
+        
+        .scan-btn { 
+            background: #4CAF50; 
+            color: white; 
         }
-        #interactive {
-            width: 100%;
-            max-width: 640px;
-            margin: auto;
+        
+        .modal-overlay { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            background: rgba(0,0,0,0.5); 
+            display: none; 
+            justify-content: center; 
+            align-items: flex-start; 
+            padding: 20px; 
+            z-index: 1000; 
+            overflow-y: auto; 
         }
-        .result-item {
-            display: flex;
-            align-items: center;
-            padding: 1rem;
-            margin: 0.5rem 0;
-            background: #f8f9fa;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        
+        .modal { 
+            background: white; 
+            max-width: 600px; 
+            border-radius: 12px; 
+            padding: 1.5rem; 
+            position: relative; 
+            width: 100%; 
         }
-        .quadra-letter {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: #1976D2;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2em;
-            font-weight: bold;
-            margin-right: 1rem;
-            box-shadow: 0 0 10px rgba(25, 118, 210, 0.4);
+        
+        .modal-close { 
+            position: absolute; 
+            top: 10px; 
+            right: 15px; 
+            font-size: 1.5em; 
+            color: #999; 
+            cursor: pointer; 
         }
-        .cep-badge {
-            font-size: 0.9em;
-            color: #555;
+        
+        .scanner-container { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.8); 
+            display: none; 
+            z-index: 2000; 
         }
-        .modal-close {
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            font-size: 1.5em;
-            color: #999;
-            cursor: pointer;
+        
+        #interactive { 
+            width: 100%; 
+            max-width: 640px; 
+            margin: auto; 
+        }
+        
+        .result-item { 
+            display: flex; 
+            align-items: center; 
+            padding: 1rem; 
+            margin: 0.5rem 0; 
+            background: #f8f9fa; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+        }
+        
+        .quadra-letter { 
+            font-size: 2em; 
+            font-weight: bold; 
+            background: #1976D2; 
+            color: white; 
+            padding: 18px; 
+            border-radius: 8px; 
+            margin-right: 1rem; 
+            box-shadow: 0 0 10px rgba(25, 118, 210, 0.4); 
+        }
+        
+        .cep-badge { 
+            font-size: 1em; 
+            color: #555; 
         }
     </style>
 </head>
 <body>
     <div class="search-box">
-        <h1 style="color: #1976D3; text-align: center; margin: 0 0 1rem 0;">
-            🌐 ROTA CIRCULAR
-        </h1>
-        <input type="text" id="searchInput" 
-               placeholder="🔍 Digite número, logradouro ou 'TODOS'">
+        <h1>🌐 ROTA CIRCULAR</h1>
+        <div class="input-wrapper">
+            <input type="text" id="searchInput" placeholder="Digite o CEP ou nome da quadra...">
+            <button class="mic-icon" onclick="iniciarReconhecimento()">🎤</button>
+        </div>
         <div class="button-group">
             <button class="search-btn" onclick="searchQuadra()">Buscar</button>
-            <button class="scan-btn" onclick="iniciarLeitor()">Ler CEP</button>
+            <button class="scan-btn" onclick="iniciarLeitor()">Ler Código</button>
         </div>
     </div>
-    <div class="modal-overlay" id="modalOverlay">
-        <div class="modal">
+
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal()">
+        <div class="modal" onclick="event.stopPropagation()">
             <span class="modal-close" onclick="closeModal()">×</span>
             <div id="modalContent"></div>
         </div>
     </div>
+
     <div class="scanner-container" id="scannerContainer">
+        <button class="modal-close" onclick="stopScanner()">Fechar Leitor</button>
         <div id="interactive"></div>
-        <div style="position: absolute; bottom: 20px; width: 100%; text-align: center;">
-            <button onclick="stopScanner()" style="padding: 10px 20px; background: #ff4444; color: white;">
-                Fechar Leitor
-            </button>
-        </div>
     </div>
-<script>
-    const quadras = [
-        { numero: '06712145', instrucao: 'D', logradouro: 'ÁLAMOS' },
-        { numero: '06712106', instrucao: 'C', logradouro: 'AL CAMELIAS' },
-        { numero: '06712105', instrucao: 'E', logradouro: 'ALTA LORENA' },
-        { numero: '06712185', instrucao: 'B', logradouro: 'ÂNGULO' },
-        { numero: '06712111', instrucao: 'D', logradouro: 'ARIANA' },
-        { numero: '06712215', instrucao: 'A', logradouro: 'ARMENIA' },
-        { numero: '06712205', instrucao: 'A', logradouro: 'BABILONIA' },
-        { numero: '06712110', instrucao: 'E', logradouro: 'BAVIERA' },
-        { numero: '06712120', instrucao: 'E', logradouro: 'BORGONHA' },
-        { numero: '06712165', instrucao: 'D', logradouro: 'BRETÕES' },
-        { numero: '06712195', instrucao: 'B', logradouro: 'CÉLTICO' },
-        { numero: '06712160', instrucao: 'D', logradouro: 'CORSÉGA' },
-        { numero: '06712155', instrucao: 'D', logradouro: 'ESLAVOS' },
-        { numero: '06712200', instrucao: 'B', logradouro: 'ILIRIA' },
-        { numero: '06712210', instrucao: 'A', logradouro: 'LÍDIA' },
-        { numero: '06712190', instrucao: 'B', logradouro: 'MACEDONIA' },
-        { numero: '06712170', instrucao: 'C', logradouro: 'MAURITÃNIA' },
-        { numero: '06712115', instrucao: 'E', logradouro: 'SARDENHA' },
-        { numero: '06712180', instrucao: 'C', logradouro: 'SAXÃO' },
-        { numero: '06712220', instrucao: 'A', logradouro: 'TRACIA' },
-        { numero: '06712175', instrucao: 'C', logradouro: 'VÂNDALO' }
-    ];function normalizar(texto) {
-    return texto.normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')
-                .toUpperCase()
-                .replace(/[^A-Z0-9]/g, '');
-}
 
-function searchQuadra() {
-    const input = document.getElementById('searchInput').value;
-    const termo = normalizar(input);
-    const resultados = [];
+    <audio id="audio-sucesso" src="success.mp3"></audio>
+    <audio id="audio-erro" src="error.mp3"></audio>
 
-    if (!termo) {
-        showModal('⚠️ Digite um termo de busca válido');
-        return;
-    }
+    <script>
+        // Dados das quadras
+        const quadras = [
+  { numero: '06712145', instrucao: 'D', logradouro: 'ÁLAMOS' },
+  { numero: '06712106', instrucao: 'C', logradouro: 'AL CAMELIAS' },
+  { numero: '06712105', instrucao: 'E', logradouro: 'ALTA LORENA' },
+  { numero: '06712185', instrucao: 'B', logradouro: 'ÂNGULO' },
+  { numero: '06712111', instrucao: 'D', logradouro: 'ARIANA' },
+  { numero: '06712215', instrucao: 'A', logradouro: 'ARMENIA' },
+  { numero: '06712205', instrucao: 'A', logradouro: 'BABILONIA' },
+  { numero: '06712110', instrucao: 'E', logradouro: 'BAVIERA' },
+  { numero: '06712120', instrucao: 'E', logradouro: 'BORGONHA' },
+  { numero: '06712165', instrucao: 'D', logradouro: 'BRETÕES' },
+  { numero: '06712195', instrucao: 'B', logradouro: 'CÉLTICO' },
+  { numero: '06712160', instrucao: 'D', logradouro: 'CORSÉGA' },
+  { numero: '06712155', instrucao: 'D', logradouro: 'ESLAVOS' },
+  { numero: '06712200', instrucao: 'B', logradouro: 'ILIRIA' },
+  { numero: '06712210', instrucao: 'A', logradouro: 'LÍDIA' },
+  { numero: '06712190', instrucao: 'B', logradouro: 'MACEDONIA' },
+  { numero: '06712170', instrucao: 'C', logradouro: 'MAURITÃNIA' },
+  { numero: '06712115', instrucao: 'E', logradouro: 'SARDENHA' },
+  { numero: '06712180', instrucao: 'C', logradouro: 'SAXÃO' },
+  { numero: '06712220', instrucao: 'A', logradouro: 'TRACIA' },
+  { numero: '06712175', instrucao: 'C', logradouro: 'VÂNDALO' }
+];
 
-    if (termo === 'TODOS' || termo === '12150') {
-        resultados.push(...quadras);
-    } else {
-        quadras.forEach(item => {
-            const cepParcial = item.numero;
-            const logradouroNorm = normalizar(item.logradouro);
+        // Elementos de áudio
+        const sucesso = document.getElementById('audio-sucesso');
+        const erro = document.getElementById('audio-erro');
 
-            if (cepParcial.includes(termo) || logradouroNorm.includes(termo)) {
-                resultados.push(item);
+        // Funções principais
+        function normalizar(texto) {
+            return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        }
+
+        function searchQuadra() {
+            const inputEl = document.getElementById('searchInput');
+            let termo = normalizar(inputEl.value.trim());
+            
+            if (!termo || !validateInput(termo)) {
+                showError('❌ Entrada inválida');
+                return;
             }
-        });
-    }
 
-    exibirResultados(resultados);
-    document.getElementById('searchInput').value = '';
-}
-
-let scannerAtivo = false;
-
-function iniciarLeitor() {
-    document.getElementById('scannerContainer').style.display = 'block';
-
-    Quagga.init({
-        inputStream: {
-            name: "Live",
-            type: "LiveStream",
-            target: document.querySelector('#interactive'),
-            constraints: {
-                width: 640,
-                height: 480,
-                facingMode: "environment"
+            if (/^\d{5}$/.test(termo)) {
+                termo = termo.padStart(8, '0').slice(-5);
             }
-        },
-        decoder: {
-            readers: ["code_128_reader"]
-        }
-    }, err => {
-        if (err) {
-            alert('Erro ao iniciar a câmera: ' + err);
-            return;
-        }
-        Quagga.start();
-        scannerAtivo = true;
-    });
 
-    Quagga.onDetected(result => {
-        if(scannerAtivo) {
-            const code = result.codeResult.code;
-            document.getElementById('searchInput').value = code;
-            stopScanner();
-            searchQuadra();
+            const resultados = quadras.filter(item => {
+                const cepLimpo = item.numero.replace(/\D/g, '');
+                return (
+                    cepLimpo === termo ||
+                    cepLimpo.endsWith(termo) ||
+                    normalizar(item.logradouro).includes(termo)
+                );
+            });
+
+            if (resultados.length === 0) {
+                erro.play();
+                showError('❌ Quadra não encontrada');
+            } else {
+                sucesso.play();
+                exibirResultados(resultados);
+            }
+            
+            inputEl.value = '';
         }
-    });
-}
 
-function stopScanner() {
-    if(scannerAtivo) {
-        Quagga.stop();
-        scannerAtivo = false;
-    }
-    document.getElementById('scannerContainer').style.display = 'none';
-}
-
-function exibirResultados(resultados) {
-    const modalContent = document.getElementById('modalContent');
-    modalContent.innerHTML = resultados.length > 0 
-        ? resultados.map(item => `
-            <div class="result-item">
-                <div class="quadra-letter">${item.instrucao}</div>
-                <div>
-                    <div style="font-size: 1.2em; font-weight: 500;">${item.logradouro}</div>
-                    <div class="cep-badge">CEP: ${item.numero.replace(/(\d{5})(\d{3})/, '$1-$2')}</div>
+        function exibirResultados(resultados) {
+            const modal = document.getElementById('modalContent');
+            modal.innerHTML = resultados.map(item => `
+                <div class="result-item">
+                    <div class="quadra-letter">Portaria ${item.instrucao}</div>
+                    <div>
+                        <div style="font-size: 1.2em; font-weight: 600;">${item.logradouro}</div>
+                        <div class="cep-badge">CEP: ${item.numero.replace(/(\d{5})(\d{3})/, '$1-$2')}</div>
+                    </div>
                 </div>
-            </div>
-          `).join('')
-        : '<div class="result-item">🔍 Nenhum resultado encontrado</div>';
+            `).join('');
+            document.getElementById('modalOverlay').style.display = 'flex';
+        }
 
-    document.getElementById('modalOverlay').style.display = 'flex';
-}
+        // Funções auxiliares
+        function showError(message) {
+            const modal = document.getElementById('modalContent');
+            modal.innerHTML = `
+                <div class="result-item" style="color: #dc3545;">
+                    <div style="font-size: 1.5em;">${message}</div>
+                </div>
+            `;
+            document.getElementById('modalOverlay').style.display = 'flex';
+        }
 
-function closeModal() {
-    document.getElementById('modalOverlay').style.display = 'none';
-}
+        function validateInput(termo) {
+            return /^\d{5,8}$/.test(termo) || termo.length >= 3;
+        }
 
-document.getElementById('searchInput').addEventListener('input', e => {
-    const value = e.target.value;
-    if (value.length === 8 && /^\d{8}$/.test(value)) {
-        searchQuadra();
-    }
-});
+        function closeModal() {
+            document.getElementById('modalOverlay').style.display = 'none';
+        }
 
-</script>
+        // Controle do scanner
+        function iniciarLeitor() {
+            if (!navigator.mediaDevices) {
+                showError('❌ Recurso de câmera não disponível');
+                return;
+            }
+
+            const scannerContainer = document.getElementById('scannerContainer');
+            scannerContainer.style.display = 'block';
+
+            Quagga.init({
+                inputStream: {
+                    type: 'LiveStream',
+                    target: scannerContainer,
+                    constraints: {
+                        facingMode: 'environment',
+                        focusMode: 'continuous'
+                    }
+                },
+                decoder: {
+                    readers: ['code_128_reader'],
+                    multiple: false
+                }
+            }, err => {
+                if (err) {
+                    scannerContainer.style.display = 'none';
+                    showError('❌ Erro ao acessar a câmera');
+                    return;
+                }
+                Quagga.start();
+            });
+
+            Quagga.onDetected(result => {
+                const code = result.codeResult.code;
+                document.getElementById('searchInput').value = code;
+                stopScanner();
+                searchQuadra();
+            });
+        }
+
+        function stopScanner() {
+            Quagga.stop();
+            document.getElementById('scannerContainer').style.display = 'none';
+        }
+
+        // Controle de voz
+        function iniciarReconhecimento() {
+            if (!('webkitSpeechRecognition' in window)) {
+                showError('❌ Navegador não suporta reconhecimento de voz');
+                return;
+            }
+
+            const reconhecimento = new webkitSpeechRecognition();
+            reconhecimento.continuous = false;
+            reconhecimento.interimResults = false;
+            reconhecimento.lang = 'pt-BR';
+
+            reconhecimento.onstart = () => {
+                document.getElementById('searchInput').placeholder = 'Ouvindo...';
+            };
+
+            reconhecimento.onresult = e => {
+                const transcript = e.results[0][0].transcript;
+                document.getElementById('searchInput').value = transcript;
+                searchQuadra();
+            };
+
+            reconhecimento.start();
+        }
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('keypress', e => {
+            if (e.key === 'Enter') searchQuadra();
+        });
+    </script>
 </body>
 </html>
